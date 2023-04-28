@@ -134,6 +134,12 @@ func (m *Mover) Move() error {
 				return fmt.Errorf("creating folder %s : %w", folder, err)
 			}
 		}
+		if !fileExists(destination.path) {
+			err := os.MkdirAll(destination.path, os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("creating folder %s : %w", destination.path, err)
+			}
+		}
 
 		fmt.Printf("About to move folder: %s\n", folder)
 		err := m.watcher.Add(string(folder))
