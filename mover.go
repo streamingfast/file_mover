@@ -31,8 +31,9 @@ type DestinationFolder struct {
 
 func NewDestinationFolder(path string, maxSize int64) *DestinationFolder {
 	return &DestinationFolder{
-		path:    path,
-		maxSize: maxSize,
+		path:      path,
+		maxSize:   maxSize,
+		knowFiles: map[string]bool{},
 	}
 }
 
