@@ -117,7 +117,6 @@ func NewMover(folders map[SourceFolder]*DestinationFolder) *Mover {
 	if err != nil {
 		log.Fatal("NewWatcher failed: ", err)
 	}
-
 	return &Mover{
 		folders: folders,
 		watcher: watcher,
@@ -127,6 +126,14 @@ func NewMover(folders map[SourceFolder]*DestinationFolder) *Mover {
 func (m *Mover) Move() error {
 
 	for folder, destination := range m.folders {
+
+		if !fileExists(string(folder)) {
+			err := os.MkdirAll(string(folder), os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("creating folder %s : %w", folder, err)
+			}
+		}
+
 		fmt.Printf("About to move folder: %s\n", folder)
 		err := m.watcher.Add(string(folder))
 		if err != nil {
