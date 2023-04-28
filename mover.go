@@ -197,7 +197,7 @@ func (m *Mover) moveFile(f string) error {
 			}
 
 			fp := path.Join(destination.path, fileName)
-			if fileExists(fp) {
+			if fileExists(f) {
 				err = moveFile(f, fp)
 				if err != nil {
 					return fmt.Errorf("moving file %w", err)
