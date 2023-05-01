@@ -129,27 +129,43 @@ func NewMover(folders map[SourceFolder]*DestinationFolder) *Mover {
 
 func (m *Mover) Move() error {
 
-	for folder, destination := range m.folders {
+	for sourceFolder, destination := range m.folders {
 
-		if !fileExists(string(folder)) {
-			fmt.Printf("Creating folder: %s\n", folder)
-			err := os.MkdirAll(string(folder), os.ModePerm)
-			if err != nil {
-				return fmt.Errorf("creating folder %s : %w", folder, err)
-			}
-		}
 		if !fileExists(destination.path) {
-			fmt.Printf("Creating folder: %s\n", destination.path)
+			fmt.Printf("Creating sourceFolder: %s\n", destination.path)
 			err := os.MkdirAll(destination.path, os.ModePerm)
 			if err != nil {
-				return fmt.Errorf("creating folder %s : %w", destination.path, err)
+				return fmt.Errorf("creating sourceFolder %s : %w", destination.path, err)
 			}
 		}
 
-		fmt.Printf("About to move folder: %s\n", folder)
-		err := m.watcher.Add(string(folder))
+		if !fileExists(string(sourceFolder)) {
+			fmt.Printf("Creating sourceFolder: %s\n", sourceFolder)
+			err := os.MkdirAll(string(sourceFolder), os.ModePerm)
+			if err != nil {
+				return fmt.Errorf("creating sourceFolder %s : %w", sourceFolder, err)
+			}
+		} else {
+			files, err := os.ReadDir(string(sourceFolder))
+			if err != nil {
+				return fmt.Errorf("reading sourceFolder %s : %w", sourceFolder, err)
+			}
+			for _, file := range files {
+				if file.IsDir() {
+					continue
+				}
+				fmt.Println("Moving existing file: ", file.Name())
+				err := m.moveFile(path.Join(string(sourceFolder), file.Name()))
+				if err != nil {
+					return fmt.Errorf("moving existing file %s : %w", file.Name(), err)
+				}
+			}
+		}
+
+		fmt.Printf("About to move sourceFolder: %s\n", sourceFolder)
+		err := m.watcher.Add(string(sourceFolder))
 		if err != nil {
-			log.Fatal(fmt.Sprintf("adding folder %s: %s", folder, err))
+			log.Fatal(fmt.Sprintf("adding sourceFolder %s: %s", sourceFolder, err))
 		}
 
 		err = destination.loadInitialState()
@@ -167,6 +183,7 @@ func (m *Mover) Move() error {
 }
 
 func (m *Mover) move() error {
+
 	for {
 		select {
 		case event, ok := <-m.watcher.Events:
