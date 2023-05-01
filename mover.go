@@ -132,12 +132,14 @@ func (m *Mover) Move() error {
 	for folder, destination := range m.folders {
 
 		if !fileExists(string(folder)) {
+			fmt.Printf("Creating folder: %s\n", folder)
 			err := os.MkdirAll(string(folder), os.ModePerm)
 			if err != nil {
 				return fmt.Errorf("creating folder %s : %w", folder, err)
 			}
 		}
 		if !fileExists(destination.path) {
+			fmt.Printf("Creating folder: %s\n", destination.path)
 			err := os.MkdirAll(destination.path, os.ModePerm)
 			if err != nil {
 				return fmt.Errorf("creating folder %s : %w", destination.path, err)
