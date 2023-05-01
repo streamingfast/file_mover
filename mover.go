@@ -40,10 +40,10 @@ func NewDestinationFolder(path string, maxSize int64) *DestinationFolder {
 func (d *DestinationFolder) AddFile(f *FileInfo) {
 	d.lock.Lock()
 	defer d.lock.Unlock()
-
 	if _, found := d.knowFiles[f.name]; !found {
 		d.knowFiles[f.name] = true
 		d.files = append(d.files, f)
+
 		d.currentSize += f.size
 	}
 }
@@ -79,7 +79,6 @@ func (d *DestinationFolder) freeUpSpace(nextFileSize int64) error {
 
 	if d.currentSize+nextFileSize > d.maxSize {
 		spaceToReclaim := d.maxSize * 10 / 100
-
 		for spaceToReclaim > 0 {
 			fi := d.files[0]
 			d.files = d.files[1:]
@@ -215,13 +214,19 @@ func (m *Mover) moveFile(f string) error {
 
 	if destination, ok := m.folders[SourceFolder(dir)]; ok {
 		if stat, err := os.Stat(f); err == nil {
-			err := destination.freeUpSpace(stat.Size())
-			if err != nil {
-				return fmt.Errorf("freeing space: %w", err)
-			}
 
 			fp := path.Join(destination.path, fileName)
 			if fileExists(f) {
+				destination.AddFile(&FileInfo{
+					name:             fileName,
+					size:             stat.Size(),
+					modificationTime: stat.ModTime(),
+				})
+				err := destination.freeUpSpace(stat.Size())
+				if err != nil {
+					return fmt.Errorf("freeing space: %w", err)
+				}
+
 				err = moveFile(f, fp)
 				if err != nil {
 					return fmt.Errorf("moving file %w", err)
@@ -230,11 +235,6 @@ func (m *Mover) moveFile(f string) error {
 				log.Println("move: skipping file that does not exist anymore: ", fp)
 			}
 
-			destination.AddFile(&FileInfo{
-				name:             fileName,
-				size:             stat.Size(),
-				modificationTime: stat.ModTime(),
-			})
 		}
 	}
 	return nil
