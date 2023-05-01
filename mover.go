@@ -146,20 +146,22 @@ func (m *Mover) Move() error {
 				return fmt.Errorf("creating sourceFolder %s : %w", sourceFolder, err)
 			}
 		} else {
-			files, err := os.ReadDir(string(sourceFolder))
-			if err != nil {
-				return fmt.Errorf("reading sourceFolder %s : %w", sourceFolder, err)
-			}
-			for _, file := range files {
-				if file.IsDir() {
-					continue
-				}
-				fmt.Println("Moving existing file: ", file.Name())
-				err := m.moveFile(path.Join(string(sourceFolder), file.Name()))
+			go func() {
+				files, err := os.ReadDir(string(sourceFolder))
 				if err != nil {
-					return fmt.Errorf("moving existing file %s : %w", file.Name(), err)
+					panic(fmt.Errorf("reading sourceFolder %s : %w", sourceFolder, err))
 				}
-			}
+				for _, file := range files {
+					if file.IsDir() {
+						continue
+					}
+					fmt.Println("Moving existing file: ", file.Name())
+					err := m.moveFile(path.Join(string(sourceFolder), file.Name()))
+					if err != nil {
+						panic(fmt.Errorf("moving existing file %s : %w", file.Name(), err))
+					}
+				}
+			}()
 		}
 
 		fmt.Printf("About to move sourceFolder: %s\n", sourceFolder)
